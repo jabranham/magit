@@ -2,21 +2,364 @@
 
 ** Breaking changes
 
-- Dropped support for Emacs 24.4.
-  At least Emacs 25.1 is required now.
+- Dropped support for Emacs 24.4.  At least Emacs 25.1 is required
+  now.
+
+- Dropped support for Git 1.  At least Git 2.0.0 is required now.
+  The reason 2.0.0 is the new minimal version isn't it roundness but
+  the discovery that some parts already depended on that release for
+  two years.  Just making it official.
+
+- Many commands were renamed, making their names longer.  The old
+  names are defined as aliases for now.  This is part one of a two
+  part change.  In this release we rename, for example, ~magit-tag~ to
+  ~magit-tag-create~ and in a later release ~magit-tag-popup~ will be
+  renamed to ~magit-tag~.  #3619
 
 - Removed many obsolete variable and function aliases.
 
 - Removed many obsolete variables that are not mere aliases.
 
-- Removed ~magit-section~ accessor functions.
-  Use ~oref~ and ~oset~ instead.
+- Removed ~magit-section~ accessor functions.  Use ~oref~ and ~oset~
+  instead.
+
+- The function ~magit-section-when~ has been deprecated in favor
+  of ~magit-section-match~ or the new ~magit-section-value-if~.  The
+  signatures of some related low-level functions have changed.  #3590
+
+- The ~submodule~ section type has been renamed to ~module~, same for the
+  plural variant and the related section-specific keymaps.  35f803c9c,
+  59e3891fd
+
+- Added a new function ~magit-completing-read-multiple*~, which is more
+  like ~magit-completing-read than ~magit-completing-read-multiple~.
+  Authors of extension should use the new function, which eventually
+  replace the old one.  cb4d59190
 
 ** Changes since v2.13.0
 
-- ~magit-describe-section~ now pops up a ~*Help*~ buffer showing which
-  hook and function produced the section.  The old
+- It is easier now to enable automatic committing of uncommitted
+  changes to dedicated work-in-progress refs.  While the old modes,
+  which enabled that feature only when certain things happen, still
+  exist, users should now just enable the new ~magit-wip-mode~, which
+  enables all of the other modes at once.  #3534
+
+- It is easier now to reason about the commits on wiprefs and how they
+  related to their real branch because the current branch is now being
+  merged into its wiprefs.  This can be reverted by setting the new
+  option ~magit-wip-merge-branch~ to ~nil~.  Also added new commands
+  ~magit-wip-log-index~ and ~magit-wip-log-worktree~.  #3534
+
+TODO improve
+- It is now possible to specify the major-mode used to edit commit
+  messages on a per-repository basis.  The same major-mode is also
+  used to prettify commit messages when displaying existing commit
+  messages in ~magit-revision-mode~ buffers.
+
+  To set the major-mode to be used for commit messages (or other
+  variables in the buffers used to edit them)  add an entry to a
+  ~.dir-locals.el~ file using ~git-commit-mode~ as the key, as if that
+  mode were a major-mode.
+
+  Fall back to ~$GIT_WORK_TREE/.dir-locals.el~ if ~$GIT_DIR/.dir-locals.el~
+  does not exist.  55ba0534c, d7412da32, c5269547a
+
+TODO
+- The order and default visibility of log sections in the status
+  buffer was changed to optimize for "usefulness".  Previously the
+  focus was on making sure the user did not ignore the less frequently
+  useful logs.  The result of the old approach was that users very often
+  had to collapse or move past the "currently not relevant" logs.  #3518
+1ec3d7110 When showing a status buffer for the first time, jump to some log
+3c5d3f292 3561 3562 Only jump to commits when first creating the status buffer
+d62514900 magit-status-initial-section: New option
+87de83da8 magit-status-goto-initial-section-1: Maybe change visibility
+
+TODO extend
+- Added new commands ~magit-commit-absorb~ and ~magit-commit-absorb-popup~.
+  These commands depend on the ~git-autofixup~ script, which is available
+  from https://github.com/torbiak/git-autofixup.  #3053
+
+TODO
+8adbe4355 Merge branch 'section-match' [#3590]
+
+- Removed many backward compatibility hacks, which are no longer
+  necessary.
+
+- Began to use features and many convenience functions that we
+  couldn't use before because we still supported Emacs 24.4.
+
+- ~magit-file-rename~ now reads the target from the same directory as
+  the source.  Removing parts of the path is easier than adding them
+  again.
+
+- Added new ~magit-gitignore-popup~ and bound ~I~ to it, making it
+  possible to use ~i~ for the ~magit-imerge-popup~ from the ~magit-imerge~
+  package.
+
+- ~magit-describe-section~ now pops up a ~*Help*~ buffer showing
+  which hook and function produced the section.  The old
   ~magit-describe-section~ is renamed to
   ~magit-describe-section-briefly~.
 
+- Added new ~magit-refname-pullreq~ face and a corresponding entry to
+  ~magit-ref-namespaces~.
+
+- ~magit-log-trace-definition~ learned to use ~which-function~ instead of
+  the less complete ~add-log-current-defun~.  #3483
+
+- Added a new major-mode ~git-commit-elisp-text-mode~ intended to be
+  used when editing commit messages for Elisp projects.  It derives
+  from ~text-mode~ and additionally highlights ~`symbols'~ and "strings".
+  d7fa6632b
+
+- fixup! and squash! are now highlighted like [keywords] in logs.
+  426773040
+
+- Added new stub commands ~magit-browse-thing~ and ~magit-edit-thing~.
+  Like other ~magit-*-thing~ functions they are intend to be replaced in
+  section-specific keymaps.  Forge will use do so for these commands.
+  56fccaca6, 0fa3092eb
+
+- In case they are bound when Magit is loaded (because the shell from
+  which Emacs was started exported them, i.e. because of a user error),
+  then unsed ~$GIT_DIR~ and ~$GIT_WORK_TREE~.  2d7d5d840
+
+- ~magit-merge-into~ now only offers local branches for completion and
+  defaults to the upstream.  If the upstream is a remote branch then
+  it defaults to the respective local branch.  a52d70198
+
+- It is now possible to set the face used to highlight the headings of
+  certain sections using the new ~heading-highlight-face~ slot.  2319a1e0e
+
+- The summary line of a commit message and the first line of notes are
+  now emphasized more to make it more obvious what text is part of the
+  commit message and what text was added by a note.  fda4b936c
+
+- Detection of the branch at point was improved.  #3530
+
+- Added new shortstat margin style for logs.  Performance isn't good
+  yet, so you might want to avoid this for long logs.  #3035
+
+- Added new variable ~magit-perl-executable~ for platforms that put perl
+  in unusual places.  We use perl for some one-liners that are embedded
+  in lisp because we known that it is available because git depens on
+  it.  #3538
+
+- Renamed the existing command ~magit-describe-section~ to
+  ~magit-describe-section-briefly~ and added a new command
+  ~magit-describe-section~, which pops up a ~*Help*~ buffer.  Run section
+  insertion hooks using the new ~magit-run-section-hook~ function, so
+  that some useful information about them can be recorded an then be
+  displayed by ~magit-describ-section~.  #3539
+
+- Added new command ~magit-reset-worktree~.  The existing ~magit-reset-*~
+  commands already implemented the variants supported by ~git reset~,
+  now Magit also implements the variant missing from that.  b4d5c2bee
+
+- Improved ~magit-process-password-auth-source~'s entry matching.
+  60a335e5c
+
+- Added new hook ~magit-create-buffer~ hook.  2113dfc3d
+
+- When the user "discards" a file with conflicts then they are asked
+  which side of the conflict they want to keep.  When multiple files
+  are selected, then it is now possible to decide for all of them at
+  once.  #3553
+
+- Added option ~--ignore-submodules~ to diff popups.  This option does
+  not only affect diffs but also the dedicated module sections and can
+  therefore be used to temporarily hide all information about modules,
+  which can be expensive to calculate.  #3555, #3568
+
+- Added ~--graph~ to the default value of ~magit-log-select-arguments~
+  instead of hard-coding this argument for some of the users of the
+  log-select machinery.  #3559
+
+- The upstream of the current branch is no emphasized in logs, by
+  default by making it italic.  #3573
+
+- Added new command ~magit-submodule-remove~ and the new related option
+  ~magit-submodule-remove-trash-gitdirs~.  The default is to not trash
+  the gitdirs.  ~magit-submodule-add~ now offers to reuse an existing
+  gitdir when re-adding a submodule.  #3585
+
+- ~magit-submodule-add~ is run asynchronously now.  #3585
+
+- Information about the running Git process is now also shown in the
+  mode-line of buffers that were created after the process was
+  started.  43264c873
+
+- Rebase commands that continue a rebase sequence can now use ~git rbr~
+  instead of ~git rebase~.  To initiate a rebase sequence using using
+  ~git rbr~ you may use https://github.com/fanatoly/magit-rbr.  c2cd780b2
+
+- The manual is now also available in epub format, but it isn't very
+  pretty.  #3579
+
+- Added new hooks ~magit-stage-hook~ and ~magit-unstage-hook~.  #3496
+
+TODO fix or else remove them again
+32d1e8a43 * 3615 magit-post-commit-hook: New hook
+acbc15d71 * git-commit-post-finish-hook: New hook
+
+- ~magit-format-patch~ can now be told to only include the changes to
+  certain files in the patch.  It now also refreshes Magit buffers.
+  #3601
+
+- No longer truncate the list of related refs in ~magit-revision-mode~
+  buffers if they don't fit on a single line.  Instead allow users
+  to specify the kinds of refs that should be inserted using the
+  option ~magit-revision-insert-related-refs~.  #3487
+
+- Added new function ~magit-gitdir~ scheduled to replace ~magit-git-dir~
+  eventually because the latter has a really strange signature.
+  5f407a29a
+
+- Created new libraries from existing code.  9efcb1e8b ff
+
+- The option ~magit-revision-show-gravatar~ is now easier to customize
+  and customizing it to only one of the images actually works now.
+  f4b8fee66, b82228bc6
+
+- The option ~magit-repository-directories~ has a non-nil default value
+  now.  f77d1158b
+
+- The list of stashes in the status buffer is initially collapsed now.
+  4dc1d0593
+
+- The commands ~magit-previous-line~ and ~magit-next-line~ are used by
+  default now.  3ae75c865
+
+- Added support for ~--left-right~ output in logs.  #3627
+
+- Added new option ~magit-with-editor-envvar~.  Changing its value from
+  ~GIT_EDITOR~ to ~GIT_SEQUENCE_EDITOR~ allows users to continue to use
+  Magit (~git-rebase.el~ actually) to edit rebase sequence but to use
+  another editor to edit commit messages and such.  #3629
+
+- Added new option ~magit-clone-default-directory~.  #3635
+
 ** Fixes since v2.13.0
+
+- A confirmation prompt during rebase was wrong.  37d76f409
+
+- ~magit-rebase-autosquash~ asked for confirmation when the user already
+  confirmed earlier.  02e6c75b6
+
+- ~magit-commit-add-log~ inserted after the diff that gets inserted if
+  ~commit.verbose~ is ~true~.  #3480
+
+- ~magit-log-wash-rev~ errored in ~magit-cherry-mode~, starting beginning
+  with Emacs 26.1.
+
+- ae3256b4d * #3469 magit-dired-jump: Don't append slash to directory
+
+- Magit used a completion function to make the built-in completion
+  respect the collection's order.  Even though that wasn't necessary
+  for Ivy and Helm it did the same here, which became a problem when a
+  change in Helm causes fuzzy completion to break in combination with
+  a completion function.  Likewise a change in Ivy causes Magit's sort
+  order to be ignored, which we work around now.  #3476, #3477
+
+- In some cases ~magit-branch-pull-request~ set Git variables to invalid
+  values.  #3417
+
+- The section visibility cache used ~eq~ when it should have used ~equal~.
+  It also briefly used ~alist-get~, which we cannot do because that did
+  not take a ~testfn~ argument in Emacs 25.  #3495, #3499
+
+- Detecting whether a commit has already been pushed to a "publishing"
+  branch was much slower than it had to be.  #3519
+
+- ~magit-gitignore-popup~'s autoload definition was broken.
+
+- When using cygwin ~git-commit-setup-font-lock~ could end up trying to
+  run git in a non-existant directory.  #3505
+
+- ~magit-completion-read~ did not protect the value of ~this-command~ even
+  though there is code that assumes it does.  #3529
+
+- ~magit-read-file-trace~ in some cases claimed that valid user input
+  was invalid even though it was valid.  Now we don't try to validate
+  it anymore.  #3531
+
+- We didn't account for the surprising fact that asking whether the
+  value of a local variable is risky can change point.  #3541
+
+- ~magit-merge-into~ signaled an error if the upstream of the current
+  branch isn't configured instead of letting the user pick a target.
+  #3550
+
+- Some of the more complex ~magit-cherry-*~ variants did not abort if
+  the first step failed.  #3556
+
+- Trying to visit a commit of a submodule directly from the status
+  buffer of the super-projects resulted in an error.  #3563
+
+- ~magit-file-rename~ failed to rename a file that is located at the
+  top-level of the working tree.  #3569
+
+- Magit didn't account for ~git rebase -i --root~ corrupting the root
+  commit's author date field, resulting in its output being corrupted
+  too.  #3574
+
+- If given one invalid rev, then ~magit-rev-eq~ returned ~nil~, but when
+  both revs are invalid, then it returned ~t~.  Now it returns ~nil~ in
+  both cases.
+
+- In an edge case ~magit-diff-type~ falsely concluded that the
+  uncommitted changes in a diff buffer already are committed.  #2627
+
+- ~magit--github-url-p~ failed to return ~t~ for an url for Github
+  Enterprise instances.  #3572
+
+- Trying to insert Gravatar images resulted in an error if the service
+  is not reachable.  #3597
+
+- ~magit-display-buffer~ always selected the appropriate frame even if
+  that was already selected.  That is undesirable because selecting
+  a frame has side-effects.  f07eb85c6
+
+- A key binding was not updated when ~magit-submodule-deinit~ was renamed
+  to ~magit-submodule-unpopulate~.  b06845208
+
+- ~magit-submodule-visit~ could end up re-populated the visited module.
+  3d794cd01
+
+- The third-party ~git-annex~ program converts submodule gitdirs to
+  symlinks, which we did not account for.  #3599
+
+- ~magit-bisect-start~ did fail silently when invalid user input that
+  flipped the good and bad revisions instead of providing an
+  informative error message.  #3604
+
+- ~magit-bisect-start~ did fail silently when there are uncommitted
+  changes instead of providing an informative error message.  In some
+  edge cases it actually is possible to bisect with uncommitted
+  changes but that would dangerous and we do not try to detect it and
+  just always error out.  #3604
+
+- When applying changes, then the ~--unidiff-zero~ and ~-C0~ arguments
+  were not automatically used when needed.  The former wasn't used
+  because of a bug, the latter because I was not aware that there
+  was an edge case that makes that necessary.  #3608
+
+- Backported a fix (from Emacs 27) for an Emacs bug that sometimes
+  caused ~git rebase~ to fail to acquire the ~index.lock~.  #2708,
+  https://debbugs.gnu.org/cgi/bugreport.cgi?bug=21559
+
+- Autoloading ~magit-submodules~ didn't work.  #3618
+
+- Reverting files failed if the selection contained only binary files.
+  c7bbe3e9a
+
+- ~magit-read-repository~ failed when ~magit-repository-directories~ is
+  non-nil but no repository can be found in those directories.  #3636
+
+- Attempting reversing changes to binary files failed with an error
+  that wasn't informative enough.  #3625
+
+- When a local branch is being renamed, then ~magit-branch-rename~ used
+  to also rename the (remote) push-target, which is unsafe in some
+  cases.  Now it always asks the user before doing so.  14c7b1381
